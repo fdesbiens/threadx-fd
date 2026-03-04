@@ -211,6 +211,34 @@ _tx_thread_schedule_loop:
     csrw    fcsr, t0                                    // Restore fcsr
 #endif
 
+#if defined(__riscv_vector)
+    /* Recover vector registers v0-v31 */
+#if defined(__riscv_float_abi_single) || defined(__riscv_float_abi_double)
+    addi    t1, sp, 64*8
+#else
+    addi    t1, sp, 31*8
+#endif
+    addi    t2, t1, 4*8
+    vsetvli t3, zero, e8, m8, ta, ma
+    vle8.v  v0, (t2)                                    // Recover v0 ~ v7
+    add     t2, t2, t3
+    vle8.v  v8, (t2)                                    // Recover v8 ~ v15
+    add     t2, t2, t3
+    vle8.v  v16, (t2)                                   // Recover v16 ~ v23
+    add     t2, t2, t3
+    vle8.v  v24, (t2)                                   // Recover v24 ~ v31
+    add     t2, t2, t3
+
+    /* Recover vector CSRs */
+    ld      t2, 0*8(t1)
+    ld      t3, 1*8(t1)
+    ld      t4, 2*8(t1)
+    vsetvl  zero, t4, t3
+    csrw    vstart, t2
+    ld      t4, 3*8(t1)
+    csrw    vcsr, t4
+#endif
+
     /* Recover standard registers.  */
 
     ld      t0, 30*8(sp)                                // Recover mepc
@@ -218,6 +246,10 @@ _tx_thread_schedule_loop:
     li      t0, 0x1880                                  // Prepare mstatus: MPP=Machine(0x1800) | MPIE(0x80)
 #if defined(__riscv_float_abi_single) || defined(__riscv_float_abi_double)
     li      t1, 0x2000                                  // Set FS bits for FP state
+    or      t0, t0, t1
+#endif
+#if defined(__riscv_vector)
+    li      t1, 0x0200                                  // Set VS bits (bits 10:9 to 01) for vector state
     or      t0, t0, t1
 #endif
     csrw    mstatus, t0                                 // Set mstatus
@@ -256,6 +288,20 @@ _tx_thread_schedule_loop:
 #else
     addi    sp, sp, 32*8                                // Recover stack frame - without floating point registers
 #endif
+#if defined(__riscv_vector)
+#if defined(__riscv_float_abi_single) || defined(__riscv_float_abi_double)
+    addi    t0, sp, -65*8
+#else
+    addi    t0, sp, -32*8
+#endif
+    csrr    t1, vlenb                                   // Get vector register byte length
+    slli    t1, t1, 5                                   // Multiply by 32 (number of vector registers)
+    addi    t1, t1, 4*8                                 // Add vector CSR space: vstart, vtype, vl, vcsr
+    add     sp, sp, t1                                  // Recover vector stack frame
+
+    ld      t1, 18*8(t0)                                // Recover t1
+    ld      t0, 19*8(t0)                                // Recover t0
+#endif
     mret                                                // Return to point of interrupt
 
 _tx_thread_synch_return:
@@ -292,6 +338,34 @@ _tx_thread_synch_return:
     csrw    fcsr, t0                                    //
 #endif
 
+#if defined(__riscv_vector)
+    /* Recover vector registers v0-v31 */
+#if defined(__riscv_float_abi_single) || defined(__riscv_float_abi_double)
+    addi    t1, sp, 28*8
+#else
+    addi    t1, sp, 15*8
+#endif
+    addi    t2, t1, 4*8
+    vsetvli t3, zero, e8, m8, ta, ma
+    vle8.v  v0, (t2)                                    // Recover v0 ~ v7
+    add     t2, t2, t3
+    vle8.v  v8, (t2)                                    // Recover v8 ~ v15
+    add     t2, t2, t3
+    vle8.v  v16, (t2)                                   // Recover v16 ~ v23
+    add     t2, t2, t3
+    vle8.v  v24, (t2)                                   // Recover v24 ~ v31
+    add     t2, t2, t3
+
+    /* Recover vector CSRs */
+    ld      t2, 0*8(t1)
+    ld      t3, 1*8(t1)
+    ld      t4, 2*8(t1)
+    vsetvl  zero, t4, t3
+    csrw    vstart, t2
+    ld      t4, 3*8(t1)
+    csrw    vcsr, t4
+#endif
+
     /* Recover standard preserved registers.  */
     /* Recover standard registers.  */
 
@@ -314,6 +388,12 @@ _tx_thread_synch_return:
     addi    sp, sp, 29*8                                // Recover stack frame
 #else
     addi    sp, sp, 16*8                                // Recover stack frame
+#endif
+#if defined(__riscv_vector)
+    csrr    t1, vlenb                                   // Get vector register byte length
+    slli    t1, t1, 5                                   // Multiply by 32 (number of vector registers)
+    addi    t1, t1, 4*8                                 // Add vector CSR space: vstart, vtype, vl, vcsr
+    add     sp, sp, t1                                  // Recover vector stack frame
 #endif
     ret                                                 // Return to thread
 

@@ -73,6 +73,12 @@ _tx_thread_system_return:
 #else
     addi    sp, sp, -16*8                               // Allocate space on the stack - without floating point enabled
 #endif
+#if defined(__riscv_vector)
+    csrr    t1, vlenb                                   // Get vector register byte length
+    slli    t1, t1, 5                                   // Multiply by 32 (number of vector registers)
+    addi    t1, t1, 4*8                                 // Add vector CSR space: vstart, vtype, vl, vcsr
+    sub     sp, sp, t1                                  // Allocate vector space on the stack
+#endif
 
     /* Store floating point preserved registers.  */
 #if defined(__riscv_float_abi_single)
@@ -105,6 +111,36 @@ _tx_thread_system_return:
     fsd     f27, 26*8(sp)                               // Store fs11
     csrr    t0, fcsr
     sd      t0, 27*8(sp)                                // Store fcsr
+#endif
+
+#if defined(__riscv_vector)
+    /* Store vector registers and CSRs */
+#if defined(__riscv_float_abi_single) || defined(__riscv_float_abi_double)
+    addi    t1, sp, 28*8
+#else
+    addi    t1, sp, 15*8
+#endif
+    /* Store vector CSRs */
+    csrr    t2, vstart                                  // Store vstart
+    sd      t2, 0*8(t1)
+    csrr    t2, vtype                                   // Store vtype
+    sd      t2, 1*8(t1)
+    csrr    t2, vl                                      // Store vl
+    sd      t2, 2*8(t1)
+    csrr    t2, vcsr                                    // Store vcsr
+    sd      t2, 3*8(t1)
+
+    /* Store vector registers v0-v31 */
+    addi    t2, t1, 4*8
+    vsetvli t3, zero, e8, m8, ta, ma
+    vse8.v  v0, 0(t2)                                   // Store v0 ~ v7
+    add     t2, t2, t3
+    vse8.v  v8, 0(t2)                                   // Store v8 ~ v15
+    add     t2, t2, t3
+    vse8.v  v16, 0(t2)                                  // Store v16 ~ v23
+    add     t2, t2, t3
+    vse8.v  v24, 0(t2)                                  // Store v24 ~ v31
+    add     t2, t2, t3
 #endif
 
     sd      zero,  0(sp)                                // Solicited stack type
