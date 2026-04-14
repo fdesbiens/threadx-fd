@@ -133,6 +133,34 @@ _tx_thread_context_restore:
     csrw    fcsr, t0
 #endif
 
+#if defined(__riscv_vector)
+    /* Recover vector registers v0-v31 */
+#if defined(__riscv_float_abi_single) || defined(__riscv_float_abi_double)
+    addi    t1, sp, 64*8
+#else
+    addi    t1, sp, 31*8
+#endif
+    addi    t2, t1, 4*8
+    vsetvli t3, zero, e8, m8, ta, ma
+    vle8.v  v0, (t2)                                    // Recover v0 ~ v7
+    add     t2, t2, t3
+    vle8.v  v8, (t2)                                    // Recover v8 ~ v15
+    add     t2, t2, t3
+    vle8.v  v16, (t2)                                   // Recover v16 ~ v23
+    add     t2, t2, t3
+    vle8.v  v24, (t2)                                   // Recover v24 ~ v31
+    add     t2, t2, t3
+
+    /* Recover vector CSRs */
+    ld      t2, 0*8(t1)
+    ld      t3, 1*8(t1)
+    ld      t4, 2*8(t1)
+    vsetvl  zero, t4, t3
+    csrw    vstart, t2
+    ld      t4, 3*8(t1)
+    csrw    vcsr, t4
+#endif
+
     /* Recover standard registers.  */
 
     /* Restore registers,
@@ -164,6 +192,10 @@ _tx_thread_context_restore:
     li      t0, 0x2000                                  // Set FS bits (bits 14:13 to 01) for FP state
     or      t1, t1, t0
 #endif
+#if defined(__riscv_vector)
+    li      t0, 0x0200                                  // Set VS bits (bits 10:9 to 01) for vector state
+    or      t1, t1, t0
+#endif
     csrw    mstatus, t1                                 // Update mstatus safely
 
     ld      ra,  28*8(sp)                               // Recover return address
@@ -188,6 +220,21 @@ _tx_thread_context_restore:
     addi    sp, sp, 65*8                                // Recover stack frame - with floating point enabled
 #else
     addi    sp, sp, 32*8                                // Recover stack frame - without floating point enabled
+#endif
+
+#if defined(__riscv_vector)
+#if defined(__riscv_float_abi_single) || defined(__riscv_float_abi_double)
+    addi    t0, sp, -65*8
+#else
+    addi    t0, sp, -32*8
+#endif
+    csrr    t1, vlenb                                   // Get vector register byte length
+    slli    t1, t1, 5                                   // Multiply by 32 (number of vector registers)
+    addi    t1, t1, 4*8                                 // Add vector CSR space: vstart, vtype, vl, vcsr
+    add     sp, sp, t1                                  // Recover vector stack frame
+
+    ld      t1, 18*8(t0)                                // Recover t1
+    ld      t0, 19*8(t0)                                // Recover t0
 #endif
     mret                                                // Return to point of interrupt
 
@@ -268,6 +315,34 @@ _tx_thread_no_preempt_restore:
     csrw    fcsr, t0                                    // Restore fcsr
 #endif
 
+#if defined(__riscv_vector)
+    /* Recover vector registers v0-v31 */
+#if defined(__riscv_float_abi_single) || defined(__riscv_float_abi_double)
+    addi    t1, sp, 64*8
+#else
+    addi    t1, sp, 31*8
+#endif
+    addi    t2, t1, 4*8
+    vsetvli t3, zero, e8, m8, ta, ma
+    vle8.v  v0, (t2)                                    // Recover v0 ~ v7
+    add     t2, t2, t3
+    vle8.v  v8, (t2)                                    // Recover v8 ~ v15
+    add     t2, t2, t3
+    vle8.v  v16, (t2)                                   // Recover v16 ~ v23
+    add     t2, t2, t3
+    vle8.v  v24, (t2)                                   // Recover v24 ~ v31
+    add     t2, t2, t3
+
+    /* Recover vector CSRs */
+    ld      t2, 0*8(t1)
+    ld      t3, 1*8(t1)
+    ld      t4, 2*8(t1)
+    vsetvl  zero, t4, t3
+    csrw    vstart, t2
+    ld      t4, 3*8(t1)
+    csrw    vcsr, t4
+#endif
+
     /* Recover the saved context and return to the point of interrupt.  */
 
     /* Recover standard registers.  */
@@ -288,6 +363,10 @@ _tx_thread_no_preempt_restore:
 
 #if defined(__riscv_float_abi_single) || defined(__riscv_float_abi_double)
     li      t0, 0x2000                                  // Set FS bits for FP state
+    or      t1, t1, t0
+#endif
+#if defined(__riscv_vector)
+    li      t0, 0x0200                                  // Set VS bits (bits 10:9 to 01) for vector state
     or      t1, t1, t0
 #endif
     csrw    mstatus, t1                                 // Update mstatus safely
@@ -314,6 +393,21 @@ _tx_thread_no_preempt_restore:
     addi    sp, sp, 65*8                                // Recover stack frame - with floating point enabled
 #else
     addi    sp, sp, 32*8                                // Recover stack frame - without floating point enabled
+#endif
+
+#if defined(__riscv_vector)
+#if defined(__riscv_float_abi_single) || defined(__riscv_float_abi_double)
+    addi    t0, sp, -65*8
+#else
+    addi    t0, sp, -32*8
+#endif
+    csrr    t1, vlenb                                   // Get vector register byte length
+    slli    t1, t1, 5                                   // Multiply by 32 (number of vector registers)
+    addi    t1, t1, 4*8                                 // Add vector CSR space: vstart, vtype, vl, vcsr
+    add     sp, sp, t1                                  // Recover vector stack frame
+
+    ld      t1, 18*8(t0)                                // Recover t1
+    ld      t0, 19*8(t0)                                // Recover t0
 #endif
     mret                                                // Return to point of interrupt
 
@@ -355,6 +449,36 @@ _tx_thread_preempt_restore:
     fsd     f25, 56*8(t0)                               // Store fs9
     fsd     f26, 57*8(t0)                               // Store fs10
     fsd     f27, 58*8(t0)                               // Store fs11
+#endif
+
+#if defined(__riscv_vector)
+    /* Store vector registers and CSRs */
+#if defined(__riscv_float_abi_single) || defined(__riscv_float_abi_double)
+    addi    t1, t0, 64*8
+#else
+    addi    t1, t0, 31*8
+#endif
+    /* Store vector CSRs */
+    csrr    t2, vstart                                  // Store vstart
+    sd      t2, 0*8(t1)
+    csrr    t2, vtype                                   // Store vtype
+    sd      t2, 1*8(t1)
+    csrr    t2, vl                                      // Store vl
+    sd      t2, 2*8(t1)
+    csrr    t2, vcsr                                    // Store vcsr
+    sd      t2, 3*8(t1)
+
+    /* Store vector registers v0-v31 */
+    addi    t2, t1, 4*8
+    vsetvli t3, zero, e8, m8, ta, ma
+    vse8.v  v0, 0(t2)                                   // Store v0 ~ v7
+    add     t2, t2, t3
+    vse8.v  v8, 0(t2)                                   // Store v8 ~ v15
+    add     t2, t2, t3
+    vse8.v  v16, 0(t2)                                  // Store v16 ~ v23
+    add     t2, t2, t3
+    vse8.v  v24, 0(t2)                                  // Store v24 ~ v31
+    add     t2, t2, t3
 #endif
 
     /* Store standard preserved registers.  */

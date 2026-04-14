@@ -100,7 +100,11 @@ typedef unsigned short                          USHORT;
    thread creation is less than this value, the thread create call will return an error.  */
 
 #ifndef TX_MINIMUM_STACK
-#define TX_MINIMUM_STACK                        1024        /* Minimum stack size for this port  */
+#if defined(__riscv_vector)
+#define TX_MINIMUM_STACK                        (1024 + 16448)        /* Minimum stack size for this port  */
+#else
+#define TX_MINIMUM_STACK                        1024                  /* Minimum stack size for this port  */
+#endif
 #endif
 
 
@@ -108,7 +112,11 @@ typedef unsigned short                          USHORT;
    if TX_TIMER_PROCESS_IN_ISR is not defined.  */
 
 #ifndef TX_TIMER_THREAD_STACK_SIZE
-#define TX_TIMER_THREAD_STACK_SIZE              1024        /* Default timer thread stack size  */
+#if defined(__riscv_vector)
+#define TX_TIMER_THREAD_STACK_SIZE              (1024 + 16448)        /* Default timer thread stack size  */
+#else
+#define TX_TIMER_THREAD_STACK_SIZE              1024                  /* Default timer thread stack size  */
+#endif
 #endif
 
 #ifndef TX_TIMER_THREAD_PRIORITY

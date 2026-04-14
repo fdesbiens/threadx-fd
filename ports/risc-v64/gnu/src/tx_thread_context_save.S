@@ -146,6 +146,36 @@ _tx_thread_context_save:
     sd      t0, 63*8(sp)                                // Store fcsr
 #endif
 
+#if defined(__riscv_vector)
+    /* Store vector registers and CSRs */
+#if defined(__riscv_float_abi_single) || defined(__riscv_float_abi_double)
+    addi    t1, sp, 64*8
+#else
+    addi    t1, sp, 31*8
+#endif
+    /* Store vector CSRs */
+    csrr    t2, vstart                                  // Store vstart
+    sd      t2, 0*8(t1)
+    csrr    t2, vtype                                   // Store vtype
+    sd      t2, 1*8(t1)
+    csrr    t2, vl                                      // Store vl
+    sd      t2, 2*8(t1)
+    csrr    t2, vcsr                                    // Store vcsr
+    sd      t2, 3*8(t1)
+
+    /* Store vector registers v0-v31 */
+    addi    t2, t1, 4*8
+    vsetvli t3, zero, e8, m8, ta, ma
+    vse8.v  v0, 0(t2)                                   // Store v0 ~ v7
+    add     t2, t2, t3
+    vse8.v  v8, 0(t2)                                   // Store v8 ~ v15
+    add     t2, t2, t3
+    vse8.v  v16, 0(t2)                                  // Store v16 ~ v23
+    add     t2, t2, t3
+    vse8.v  v24, 0(t2)                                  // Store v24 ~ v31
+    add     t2, t2, t3
+#endif
+
 #ifdef TX_ENABLE_EXECUTION_CHANGE_NOTIFY
     call    _tx_execution_isr_enter                     // Call the ISR execution enter function
 #endif
@@ -236,6 +266,36 @@ _tx_thread_not_nested_save:
     sd      t0, 63*8(sp)                                // Store fcsr
 #endif
 
+#if defined(__riscv_vector)
+    /* Store vector registers and CSRs */
+#if defined(__riscv_float_abi_single) || defined(__riscv_float_abi_double)
+    addi    t1, sp, 64*8
+#else
+    addi    t1, sp, 31*8
+#endif
+    /* Store vector CSRs */
+    csrr    t2, vstart                                  // Store vstart
+    sd      t2, 0*8(t1)
+    csrr    t2, vtype                                   // Store vtype
+    sd      t2, 1*8(t1)
+    csrr    t2, vl                                      // Store vl
+    sd      t2, 2*8(t1)
+    csrr    t2, vcsr                                    // Store vcsr
+    sd      t2, 3*8(t1)
+
+    /* Store vector registers v0-v31 */
+    addi    t2, t1, 4*8
+    vsetvli t3, zero, e8, m8, ta, ma
+    vse8.v  v0, 0(t2)                                   // Store v0 ~ v7
+    add     t2, t2, t3
+    vse8.v  v8, 0(t2)                                   // Store v8 ~ v15
+    add     t2, t2, t3
+    vse8.v  v16, 0(t2)                                  // Store v16 ~ v23
+    add     t2, t2, t3
+    vse8.v  v24, 0(t2)                                  // Store v24 ~ v31
+    add     t2, t2, t3
+#endif
+
     /* Save the current stack pointer in the thread's control block.  */
     /* _tx_thread_current_ptr -> tx_thread_stack_ptr =  sp;  */
 
@@ -274,5 +334,20 @@ _tx_thread_idle_system_save:
     addi    sp, sp, 65*8                                // Recover stack frame - with floating point enabled
 #else
     addi    sp, sp, 32*8                                // Recover the reserved stack space
+#endif
+
+#if defined(__riscv_vector)
+#if defined(__riscv_float_abi_single) || defined(__riscv_float_abi_double)
+    addi    t0, sp, -65*8
+#else
+    addi    t0, sp, -32*8
+#endif
+    csrr    t1, vlenb                                   // Get vector register byte length
+    slli    t1, t1, 5                                   // Multiply by 32 (number of vector registers)
+    addi    t1, t1, 4*8                                 // Add vector CSR space: vstart, vtype, vl, vcsr
+    add     sp, sp, t1                                  // Recover vector stack frame
+
+    ld      t1, 18*8(t0)                                // Recover t1
+    ld      t0, 19*8(t0)                                // Recover t0
 #endif
     ret                                                 // Return to calling ISR
