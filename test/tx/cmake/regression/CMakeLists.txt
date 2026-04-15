@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 cmake_policy(SET CMP0057 NEW)
 
 project(regression_test LANGUAGES C)
@@ -47,6 +47,7 @@ set(regression_test_cases
     ${SOURCE_DIR}/threadx_queue_basic_one_word_test.c
     ${SOURCE_DIR}/threadx_queue_basic_sixteen_word_test.c
     ${SOURCE_DIR}/threadx_queue_basic_two_word_test.c
+    ${SOURCE_DIR}/threadx_queue_basic_max_message_size_test.c
     ${SOURCE_DIR}/threadx_queue_empty_suspension_test.c
     ${SOURCE_DIR}/threadx_queue_flush_no_suspension_test.c
     ${SOURCE_DIR}/threadx_queue_flush_test.c
