@@ -17,3 +17,7 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/inc
 )
+
+if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/example_build/qemu_virt/CMakeLists.txt)
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/example_build/qemu_virt)
+endif()

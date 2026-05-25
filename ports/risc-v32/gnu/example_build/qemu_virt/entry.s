@@ -1,5 +1,5 @@
 
-.section .text
+.section .text.boot, "ax"
 .align 4
 .global _start
 .extern main
@@ -11,7 +11,10 @@ _start:
 	bne  t0, zero, 1f
 	li x1, 0
 	li x2, 0
-	li x3, 0
+.option push
+.option norelax
+	la gp, __global_pointer$        /* x3 = gp; norelax keeps this load absolute */
+.option pop
 	li x4, 0
 	li x5, 0
 	li x6, 0
