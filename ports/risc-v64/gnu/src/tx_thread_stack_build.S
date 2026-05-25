@@ -140,7 +140,7 @@ If vector extension support:
 
     Stack Bottom: (higher memory address)  */
 
-    ld      t0, 32(a0)                                  // Pickup end of stack area
+    ld      t0, 24(a0)                                  // Pickup end of stack area
     li      t1, ~15                                     // Build 16-byte alignment mask
     and     t0, t0, t1                                  // Make sure 16-byte alignment
 
@@ -258,6 +258,6 @@ vector_clear_done:
     /* Setup stack pointer.  */
     /* thread_ptr -> tx_thread_stack_ptr =  t0;  */
 
-    sd      t0, 16(a0)                                  // Save stack pointer in thread's
+    sd      t0, 8(a0)                                   // Save stack pointer in thread's
     ret                                                 //   control block and return
 /* }  */
