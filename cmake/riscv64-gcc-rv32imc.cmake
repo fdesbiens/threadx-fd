@@ -15,8 +15,15 @@
 
 # CMake toolchain file for CORE-V MCU (CV32E40P, RV32IMC)
 #
-# Uses the riscv64-unknown-elf-gcc multi-lib toolchain (Ubuntu package
-# gcc-riscv64-unknown-elf) to cross-compile for a 32-bit RISC-V target.
+# Uses the riscv64-unknown-elf-gcc cross-compiler to produce rv32imc/ilp32
+# bare-metal firmware.  The riscv-collab toolchain (installed to /opt/riscv by
+# scripts/install_riscv.sh) is used by default.  The Ubuntu package
+# gcc-riscv64-unknown-elf also works and can be installed via install_deps.sh.
+#
+# Note: the riscv-collab toolchain is built without multilib, so it does not
+# ship an rv32/ilp32 libgcc.  The CORE-V MCU BSP provides a weak __clzsi2
+# fallback in bsp/clz.c to satisfy any __builtin_clz() calls without relying
+# on libgcc.
 #
 # Target ISA : rv32imc_zicsr  (integer, multiply, compressed, Zicsr)
 # ABI        : ilp32           (32-bit int/long/ptr, no hardware FP)
@@ -33,7 +40,12 @@ set(CFLAGS   "${ARCH_FLAGS}")
 set(ASFLAGS  "${ARCH_FLAGS}")
 set(LDFLAGS  "${ARCH_FLAGS}")
 
-# Toolchain binaries (riscv64-unknown-elf can target rv32 via multilib)
+# Toolchain binaries: riscv64-unknown-elf-gcc cross-compiler.
+# The riscv-collab toolchain (scripts/install_riscv.sh → /opt/riscv/bin) is the
+# preferred choice.  The Ubuntu package (gcc-riscv64-unknown-elf, install via
+# install_deps.sh) is also supported.  Both are searched via PATH so whichever
+# comes first is used; ensure /opt/riscv/bin precedes /usr/bin if you want the
+# riscv-collab toolchain.
 set(CMAKE_C_COMPILER    riscv64-unknown-elf-gcc)
 set(CMAKE_CXX_COMPILER  riscv64-unknown-elf-g++)
 set(AS                  riscv64-unknown-elf-as)

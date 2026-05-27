@@ -10,6 +10,10 @@ set(TX_USER_FILE   ${CORE_V_MCU_DIR}/include/tx_user.h)
 
 set(THREADX_ARCH "risc-v32")
 set(THREADX_TOOLCHAIN "gnu")
+
+message(STATUS "Toolchain file: ${CMAKE_TOOLCHAIN_FILE}")
+message(STATUS "C compiler:     ${CMAKE_C_COMPILER}")
+
 add_subdirectory(${THREADX_ROOT} threadx)
 target_include_directories(threadx PRIVATE ${CORE_V_MCU_DIR}/include)
 
@@ -17,6 +21,7 @@ set(SRCS
     ${CORE_V_MCU_DIR}/crt0.S
     ${CORE_V_MCU_DIR}/vectors.S
     ${CORE_V_MCU_DIR}/tx_initialize_low_level.S
+    ${CORE_V_MCU_DIR}/bsp/clz.c
     ${CORE_V_MCU_DIR}/bsp/irq.c
     ${CORE_V_MCU_DIR}/bsp/timer_irq.c
     ${CORE_V_MCU_DIR}/bsp/fll.c

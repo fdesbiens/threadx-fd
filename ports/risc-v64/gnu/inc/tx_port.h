@@ -72,6 +72,13 @@
 
 #define VOID                                    void
 
+/* IMPORTANT: On this RV64 port LONG/ULONG are intentionally 32-bit (int /
+ * unsigned int), NOT 64-bit.  ThreadX's internal data model requires LONG
+ * and ULONG to be exactly 4 bytes so that control-block layouts, queue
+ * message sizes, and the binary API remain identical to all other ThreadX
+ * ports.  Do NOT change these to long/unsigned long — that mistake was
+ * already corrected once (see PR #534).  Use ULONG64 for 64-bit values.  */
+
 #ifndef __ASSEMBLER__
 typedef char                                    CHAR;
 typedef unsigned char                           UCHAR;
@@ -87,6 +94,22 @@ typedef unsigned short                          USHORT;
 
 #define ALIGN_TYPE_DEFINED
 typedef unsigned long long                     ALIGN_TYPE;
+
+/* On RV64, ULONG is 32-bit but pointers are 64-bit.  Store the thread
+   pointer in the timer's VOID * extension field so _tx_thread_timeout
+   can recover it without truncation.  This mirrors the win64 port.  */
+#define TX_TIMER_INTERNAL_EXTENSION             VOID    *tx_timer_internal_extension_ptr;
+
+/* TX_TIMER_EXTENSION_PTR_DEFINED signals to portable code (e.g. tests)
+   that the timer extension pointer mechanism is in use on this port.  */
+#define TX_TIMER_EXTENSION_PTR_DEFINED
+
+#define TX_THREAD_CREATE_TIMEOUT_SETUP(t)       (t) -> tx_thread_timer.tx_timer_internal_timeout_function =  &(_tx_thread_timeout);            \
+                                                (t) -> tx_thread_timer.tx_timer_internal_timeout_param =     0;                                \
+                                                (t) -> tx_thread_timer.tx_timer_internal_extension_ptr =     (VOID *) (t);
+
+#define TX_THREAD_TIMEOUT_POINTER_SETUP(t)      TX_PARAMETER_NOT_USED(timeout_input);                                                         \
+                                                (t) =  (TX_THREAD *) _tx_timer_expired_timer_ptr -> tx_timer_internal_extension_ptr;
 
 
 /* Define the priority levels for ThreadX.  Legal values range
