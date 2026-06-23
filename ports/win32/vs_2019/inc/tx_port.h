@@ -550,4 +550,4 @@ VOID                                            _tx_win32_scheduler_wake(VOID);
 #endif
 #endif
 
-#endif
+#endif /* TX_PORT_H */
