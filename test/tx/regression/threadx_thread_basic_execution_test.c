@@ -390,7 +390,7 @@ VOID            (*temp_mutex_release)(TX_THREAD *thread_ptr);
     test_thread.tx_thread_timer.tx_timer_internal_list_head =  TX_NULL;
     test_thread.tx_thread_suspending =                         TX_TRUE;
     test_thread.tx_thread_delayed_suspend =                    TX_TRUE;
-#if defined(_WIN64)
+#if defined(_WIN32)
     {
     TX_TIMER_INTERNAL   timeout_timer;
     TX_TIMER_INTERNAL   *saved_expired_timer_ptr;
