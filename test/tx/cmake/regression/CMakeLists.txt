@@ -147,3 +147,46 @@ foreach(test_case ${regression_test_cases})
   target_link_libraries(${test_name} PRIVATE azrtos::threadx)
   add_test(${CMAKE_BUILD_TYPE}::${test_name} ${test_name})
 endforeach()
+
+
+# These tests sleep and then compare, exactly, either the tick counter or a
+# counter that a periodic timer drives:
+#
+#     tx_thread_sleep(300);
+#     if ((timer_0_counter != 300) || (timer_1_counter != 150) || ...
+#
+# The Linux port drives ticks from a thread running under SCHED_FIFO, so ticks
+# keep arriving at their full rate whether or not the thread waiting on them can
+# get a core. Starve that thread and further ticks land between the sleep
+# expiring and the thread reading the counter, so the value is past the one asked
+# for and a kernel that behaved correctly is reported as broken.
+#
+# The starvation comes from inside the suite. No test here carried any ctest
+# property, so nothing kept the tests that need a quiet machine away from the
+# ones that guarantee a busy one, and threadx_thread_wait_abort_and_isr_test has
+# been seen holding a slot for 439 seconds against 33 in the last green run.
+# Four of the tests below have failed in CI this way: time_get_set with ERROR #2,
+# timer_information with #9, timer_simple with #28, and timer_multiple_accuracy
+# with #8. The others are here because they have the same shape, not because they
+# have been unlucky yet.
+#
+# RUN_SERIAL keeps the rest of the suite away while these run, which leaves
+# assertions that exist to check tick accuracy exact rather than loosening them.
+# It says nothing about load from outside the suite, and is not meant to.
+set(tick_exact_test_cases
+    threadx_mutex_suspension_timeout_test
+    threadx_time_get_set_test
+    threadx_timer_activate_deactivate_test
+    threadx_timer_deactivate_accuracy_test
+    threadx_timer_information_test
+    threadx_timer_large_timer_accuracy_test
+    threadx_timer_multiple_accuracy_test
+    threadx_timer_multiple_test
+    threadx_timer_simple_test)
+
+foreach(test_name ${tick_exact_test_cases})
+  if(NOT TARGET ${test_name})
+    message(FATAL_ERROR "tick_exact_test_cases names ${test_name}, which is not a test in this suite")
+  endif()
+  set_tests_properties(${CMAKE_BUILD_TYPE}::${test_name} PROPERTIES RUN_SERIAL TRUE)
+endforeach()
