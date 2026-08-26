@@ -238,3 +238,5 @@ __tx_no_thread_to_disable:
     BX      LR                                  @ Return to caller
 #endif
 
+
+    THIS_IS_NOT_AN_INSTRUCTION r0, r1
